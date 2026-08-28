@@ -49,14 +49,6 @@ ZCode 的登录态只允许同时保留一个账号。有多个订阅账号（�
 
 若同时使用 [zcode-skin-manager](https://github.com/Adam1290-0/zcode-skin-manager)：两个补丁脚本均已改为**从当前 `app.asar` 解包**，互相保留对方的注入，任意顺序、任意次数重跑都不冲突。也可用 `patch-combined.bat` 一次打两个补丁（需把皮肤仓库 clone 到本仓库同级目录）。
 
-## 配置
-
-| 项 | 位置 | 说明 |
-|---|---|---|
-| `ASAR_PATH` | 三个 `.bat` 文件顶部 | ZCode 安装目录下的 `resources\app.asar` |
-| `PORT` | `zcode-account-switcher-main.mjs` + `ui_accounts.js` | 本地服务端口，默认 `27890`，仅绑定 `127.0.0.1` |
-| 广告位 | `ui_accounts.js` 中搜 `sharellm` | 面板底部与模型设置页各一处，不需要可删除 |
-
 ## 安全与隐私
 
 - 所有操作仅在本机进行，凭据与 Profile 不离开本机。
