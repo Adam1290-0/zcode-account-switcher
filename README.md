@@ -47,7 +47,7 @@ ZCode 的登录态只允许同时保留一个账号。有多个订阅账号（�
 
 ### 与皮肤插件共存
 
-若同时使用 [zcode-skin-manager](https://github.com/Adam1290-0/zcode-skin-manager)：两个补丁脚本均已改为**从当前 `app.asar` 解包**，互相保留对方的注入，任意顺序、任意次数重跑都不冲突。也可用 `patch-combined.bat` 一次打两个补丁（需把皮肤仓库 clone 到本仓库同级目录）。
+若同时使用 [zcode-skin-manager](https://github.com/Adam1290-0/zcode-skin-manager)：两个补丁脚本均已改为**从当前 `app.asar` 解包**，互相保留对方的注入，任意顺序、任意次数重跑都不冲突。
 
 ## 安全与隐私
 
