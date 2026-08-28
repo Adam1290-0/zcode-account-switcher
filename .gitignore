@@ -1,0 +1,21 @@
+# test/temp artifacts
+_sim/
+_srvtest/
+_dbg/
+_dbg2/
+_t/
+_injecttest/
+_livecheck/
+extracted/
+*.log
+*.tmp
+
+# never commit local credential/profile data
+credentials.json
+profiles.json
+*.acctbak*
+*.skinbak*
+
+# python
+__pycache__/
+*.pyc
