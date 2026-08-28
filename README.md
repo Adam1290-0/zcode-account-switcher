@@ -1,6 +1,10 @@
 # ZCode Account Switcher
 
+![Version](https://img.shields.io/badge/version-1.0.0-blue) ![License](https://img.shields.io/badge/license-MIT-green)
+
 ZCode 桌面端多账号一键切换工具：登录过的账号（z.ai / BigModel 等）保存为本地 Profile，之后点一下即可切换账号并自动重启 ZCode，无需重新输入密码或扫码。
+
+> 🌐 **AI 模型共享，尽在 [sharellm.net](https://sharellm.net)** —— 海量模型按需共享，欢迎访问。
 
 > ⚠️ **风险警告**：本工具通过解包/重打包 `app.asar` 修改 ZCode 客户端，可能违反其服务条款并导致账号受限。请先阅读 [DISCLAIMER.md](DISCLAIMER.md)，仅在你自己的账号上使用。
 
