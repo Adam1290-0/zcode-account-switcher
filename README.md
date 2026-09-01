@@ -4,7 +4,7 @@
 
 [English](#english) · [中文](#中文)
 
-![Version](https://img.shields.io/badge/version-1.0.1-blue) ![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-1.0.2-blue) ![License](https://img.shields.io/badge/license-MIT-green)
 
 给 [ZCode](https://zcode.z.ai) 桌面端加上「多账号一键切换」功能：登录过的账号（z.ai / BigModel）保存为本地 Profile，之后点一下即可切换账号并自动重启 ZCode，无需重新输入密码或扫码。头像菜单、设置侧边栏、模型设置页三处入口。
 
@@ -18,7 +18,8 @@ Give the [ZCode](https://zcode.z.ai) desktop app one-click multi-account switchi
 
 | 补丁版本 | 适配 ZCode 版本 | 状态 | 主要变化 |
 |---|---|---|---|
-| **v1.0.1（最新）** | **3.10.1 / 3.10.2** | ✅ 当前维护版本 | 模型设置页「切换账号」按钮 + 广告横幅；广告可见性修复；`/api/diag` 诊断 |
+| **v1.0.2（最新）** | **3.10.1 / 3.10.2** | ✅ 当前维护版本 | **修复切换不完整**：套餐/额度状态（config builtin token、providerFamily、套餐缓存）随账号一并切换 |
+| v1.0.1 | 3.10.1 / 3.10.2 | ✅ | 模型设置页「切换账号」按钮 + 广告横幅；广告可见性修复；`/api/diag` 诊断 |
 | v1.0.0 | 3.10.1 | ✅ | 首个版本：多账号切换、备注、渠道徽章、三处入口 |
 
 > ⚠️ 本项目是**社区第三方补丁**，通过修改 ZCode 的 `app.asar`（主进程 + 渲染层注入）实现，**与 ZCode 官方无关**。使用前请阅读 [DISCLAIMER.md](DISCLAIMER.md)，仅在你自己拥有并有权使用的账号之间切换。
@@ -170,6 +171,14 @@ ZCode 的全部登录凭据存放在 `~/.zcode/v2/credentials.json`（AES-256-GC
 ---
 
 ### 更新日志 / Changelog
+
+### v1.0.2
+
+- 🐛 **重大修复：账号切换不完整**——除 `credentials.json` 外，登录态还散落在 `config.json`（`builtin:*` 供应商的 apiKey，拉套餐/额度用的真 token）、`setting.json`（`providerFamilyDomain` 等渠道域字段）和 `coding-plan-cache.json`（套餐状态缓存）。此前切换只回写了凭据，导致模型设置页仍显示上一账号的套餐/赠送额度，重启也无效
+- 📦 「添加当前账号」现在会同时快照上述三处登录衍生状态；切换时按账号完整恢复
+- 🧠 `config.json` 只替换 `builtin:*` 条目，用户自定义供应商（SHARELLM/KIMI 等）不受影响；`setting.json` 只补丁渠道域字段，其余设置保留
+- 🕐 旧版本创建的 Profile 没有 aux 快照：面板会显示「旧快照」标记——登录该账号后重新「添加当前账号」即可升级；降级路径下切换至少会清掉套餐缓存强制刷新
+- ✅ 合成环境全链路测试：跨渠道切换（bigmodel↔zai）config/setting/缓存三处全部正确恢复，自定义供应商与无关设置零改动
 
 ### v1.0.1
 

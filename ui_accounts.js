@@ -46,6 +46,7 @@
       '.zca-pbadge.zai{color:#7dd3fc;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3)}',
       '.zca-pbadge.bigmodel{color:#c4b5fd;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.35)}',
       '.zca-pbadge.other{color:#9ca3af;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)}',
+      '.zca-stale{font-size:9px;padding:1px 5px;border-radius:5px;color:#fbbf24;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.4);cursor:help}',
       '.zca-edit{cursor:pointer;color:#8a8f96;border:none;background:transparent;font-size:12px;padding:2px 5px;border-radius:6px}',
       '.zca-edit:hover{color:#fff;background:rgba(255,255,255,.1)}',
       '.zca-row .cur{font-size:10px;color:#6ee7b7;white-space:nowrap}',
@@ -358,7 +359,7 @@
         row.innerHTML =
           '<span class="ava">' + esc(initial) + '</span>' +
           '<span class="who">' +
-          '<div class="n">' + esc(p.name) + ' ' + providerBadge(p.provider) + '</div>' +
+          '<div class="n">' + esc(p.name) + ' ' + providerBadge(p.provider) + (p.hasAux ? '' : '<span class="zca-stale" title="旧快照：建议登录该账号后重新“添加当前账号”，否则套餐/额度状态可能切换不完整">旧快照</span>') + '</div>' +
           '<div class="e">' + esc(p.email) + '</div>' +
           '<div class="r' + (p.remark ? '' : ' empty') + '">' + (p.remark ? esc(p.remark) : '点击 ✎ 添加备注') + '</div>' +
           '</span>' +

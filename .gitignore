@@ -6,6 +6,9 @@ _dbg2/
 _t/
 _injecttest/
 _livecheck/
+_auxtest/
+_v3102/
+_v/
 extracted/
 *.log
 *.tmp

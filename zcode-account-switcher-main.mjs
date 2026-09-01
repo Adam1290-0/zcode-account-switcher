@@ -19,6 +19,9 @@ function log(...a) {
 
 // ---- credentials paths (mirrors the app's own layout) ---------------------
 const CREDENTIALS_PATH = path.join(os.homedir(), '.zcode', 'v2', 'credentials.json');
+const CONFIG_PATH = path.join(os.homedir(), '.zcode', 'v2', 'config.json');
+const SETTING_PATH = path.join(os.homedir(), '.zcode', 'v2', 'setting.json');
+const PLAN_CACHE_PATH = path.join(os.homedir(), '.zcode', 'v2', 'coding-plan-cache.json');
 const PROFILES_DIR = path.join(os.homedir(), '.zcode', 'account-profiles');
 const PROFILES_PATH = path.join(PROFILES_DIR, 'profiles.json');
 
@@ -118,6 +121,109 @@ async function writeCredentials(entries) {
   await fsp.rename(tmp, CREDENTIALS_PATH);
 }
 
+// ---- aux login-derived state ------------------------------------------------
+// A manual login rewrites more than credentials.json: config.json's builtin
+// provider apiKeys (the tokens used to fetch plan/quota), setting.json's
+// providerFamily fields, and coding-plan-cache.json. Switching must restore
+// all of them, otherwise the UI keeps showing the previous account's plan.
+const SETTING_AUTH_FIELDS = [
+  'providerFamilyDomain',
+  'providerFamilyDomainUpdatedAt',
+  'modelProviderFamilyModes',
+  'modelProviderFamilySelectedKeys'
+];
+
+async function readJsonSafe(file) {
+  try {
+    return JSON.parse(await fsp.readFile(file, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+async function writeJsonAtomic(file, obj) {
+  const tmp = file + '.switcher-tmp';
+  await fsp.writeFile(tmp, JSON.stringify(obj, null, 2) + '\n', 'utf8');
+  await fsp.rename(tmp, file);
+}
+
+async function captureAux() {
+  const aux = { configBuiltin: null, settingAuth: null, codingPlanCache: null };
+  try {
+    const cfg = await readJsonSafe(CONFIG_PATH);
+    if (cfg && cfg.provider && typeof cfg.provider === 'object') {
+      const builtin = {};
+      for (const k of Object.keys(cfg.provider)) {
+        if (k.startsWith('builtin:')) builtin[k] = cfg.provider[k];
+      }
+      aux.configBuiltin = builtin;
+    }
+  } catch {}
+  try {
+    const st = await readJsonSafe(SETTING_PATH);
+    if (st && typeof st === 'object') {
+      const auth = {};
+      for (const f of SETTING_AUTH_FIELDS) {
+        if (st[f] !== undefined) auth[f] = st[f];
+      }
+      aux.settingAuth = auth;
+    }
+  } catch {}
+  try {
+    aux.codingPlanCache = await readJsonSafe(PLAN_CACHE_PATH);
+  } catch {}
+  return aux;
+}
+
+async function restoreAux(aux) {
+  const out = { config: false, setting: false, planCache: false };
+  if (!aux) {
+    // legacy profile without aux snapshot: at least drop the plan cache so
+    // the app refetches plan/quota with the switched credentials
+    try {
+      await fsp.unlink(PLAN_CACHE_PATH).catch(() => {});
+      out.planCache = true;
+    } catch (e) { log('restoreAux legacy unlink failed', e); }
+    return out;
+  }
+  // 1. config.json: replace ALL builtin:* provider entries with the snapshot's
+  try {
+    if (aux.configBuiltin) {
+      const cfg = await readJsonSafe(CONFIG_PATH);
+      if (cfg && cfg.provider && typeof cfg.provider === 'object') {
+        for (const k of Object.keys(cfg.provider)) {
+          if (k.startsWith('builtin:')) delete cfg.provider[k];
+        }
+        Object.assign(cfg.provider, aux.configBuiltin);
+        await writeJsonAtomic(CONFIG_PATH, cfg);
+        out.config = true;
+      }
+    }
+  } catch (e) { log('restoreAux config failed', e); }
+  // 2. setting.json: patch only the auth-related fields
+  try {
+    if (aux.settingAuth) {
+      const st = await readJsonSafe(SETTING_PATH);
+      if (st && typeof st === 'object') {
+        Object.assign(st, aux.settingAuth);
+        await writeJsonAtomic(SETTING_PATH, st);
+        out.setting = true;
+      }
+    }
+  } catch (e) { log('restoreAux setting failed', e); }
+  // 3. coding-plan-cache.json: restore snapshot, or delete so the app refetches
+  try {
+    if (aux.codingPlanCache) {
+      await writeJsonAtomic(PLAN_CACHE_PATH, aux.codingPlanCache);
+      out.planCache = true;
+    } else {
+      await fsp.unlink(PLAN_CACHE_PATH).catch(() => {});
+      out.planCache = true;
+    }
+  } catch (e) { log('restoreAux planCache failed', e); }
+  return out;
+}
+
 // ---- HTTP helpers ---------------------------------------------------------
 function json(res, code, obj) {
   const body = JSON.stringify(obj);
@@ -175,6 +281,7 @@ async function buildState() {
       userId: p.userId || '',
       provider,
       remark: p.remark || '',
+      hasAux: !!(p.aux && (p.aux.configBuiltin || p.aux.settingAuth)),
       isActive: !!(active.userId && p.userId === active.userId),
     };
   });
@@ -196,14 +303,16 @@ async function handleCapture() {
   if (!creds) return { ok: false, error: '当前未登录，无法添加账号' };
   const idn = identityFrom(creds);
   if (!idn.userId) return { ok: false, error: '无法识别当前账号身份' };
+  const aux = await captureAux();
   const profiles = await readProfiles();
   const existing = profiles.find((p) => p.userId === idn.userId);
   if (existing) {
-    // refresh the stored snapshot with the latest credentials
+    // refresh the stored snapshot with the latest credentials + aux state
     existing.entries = creds;
     existing.name = idn.name || existing.name;
     existing.email = idn.email || existing.email;
     existing.provider = idn.provider || existing.provider;
+    existing.aux = aux;
     if (existing.remark === undefined) existing.remark = '';
     existing.updatedAt = Date.now();
   } else {
@@ -215,12 +324,13 @@ async function handleCapture() {
       provider: idn.provider,
       remark: '',
       entries: creds,
+      aux,
       addedAt: Date.now(),
       updatedAt: Date.now(),
     });
   }
   await writeProfiles(profiles);
-  return { ok: true };
+  return { ok: true, auxCaptured: !!(aux.configBuiltin || aux.settingAuth) };
 }
 
 async function handleRemark(body) {
@@ -243,7 +353,11 @@ async function handleSwitch(body) {
   const p = profiles.find((x) => x.id === id);
   if (!p) return { ok: false, error: '账号不存在' };
   await writeCredentials(p.entries);
-  return { ok: true, relaunch: true };
+  // restore the login-derived state (config builtin tokens, provider family
+  // settings, plan cache) so plan/quota UI matches the switched account
+  let aux = null;
+  try { aux = await restoreAux(p.aux); } catch (e) { log('restoreAux error', e); }
+  return { ok: true, relaunch: true, aux };
 }
 
 async function handleDelete(body) {
