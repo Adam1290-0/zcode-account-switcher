@@ -64,6 +64,8 @@
       '#zcode-acct-ad:hover b{color:#93c5fd}',
       '.zca-model-ad{display:inline-flex;align-items:center;cursor:pointer;font-size:11px;color:#5f6570;padding:2px 8px;border:1px dashed rgba(255,255,255,.14);border-radius:6px;background:rgba(255,255,255,.02)}',
       '.zca-model-ad:hover{color:#93c5fd;border-color:rgba(147,197,253,.4)}',
+      '.zca-model-btn{padding:2px 10px;border-radius:6px;border:1px solid rgba(96,165,250,.45);background:rgba(37,99,235,.15);color:#93c5fd;font-size:12px;cursor:pointer}',
+      '.zca-model-btn:hover{background:rgba(37,99,235,.35);color:#fff}',
       '.zca-empty{padding:22px 16px;text-align:center;color:#8a8f96;font-size:12px}',
       '@keyframes zca-fade{from{opacity:0}to{opacity:1}}'
     ].join('\n');
@@ -154,32 +156,92 @@
     } catch (e) {}
   }
 
-  // Model providers settings page: place the ad right below the header row
-  // that holds the description "管理自定义模型供应商..." paragraph.
-  function injectModelSettingsAd() {
+  // Model providers settings page: inject TWO elements anchored to the
+  // description "管理自定义模型供应商..." — a「切换账号」button and the ad.
+  // Element-agnostic: the description may not be a <p> at runtime, so scan
+  // common text elements and keep the SMALLEST (deepest) match. Every scan
+  // reports diagnostics to /api/diag (throttled) for remote debugging.
+  var lastDiagAt = 0;
+
+  function diagReport(extra) {
+    var now = Date.now();
+    if (now - lastDiagAt < 60000) return; // throttle: at most 1 report / minute
+    lastDiagAt = now;
     try {
-      if (document.querySelector('[data-zca-ad-model]')) return;
-      var paras = document.querySelectorAll('p');
-      var para = null;
-      for (var i = 0; i < paras.length; i++) {
-        var t = paras[i].textContent || '';
-        if (/管理自定义模型供应商|Manage\s*custom\s*model\s*providers/i.test(t)) { para = paras[i]; break; }
-      }
-      if (!para) return;
-      var headerRow = para.parentElement;
-      if (!headerRow || !headerRow.parentNode) return;
-      var ad = document.createElement('div');
-      ad.setAttribute('data-zca-ad-model', '1');
-      ad.className = 'zca-model-ad';
-      ad.textContent = 'AI 模型共享，尽在 sharellm.net';
-      ad.title = '点击访问 sharellm.net';
-      ad.addEventListener('click', function (ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        openAdUrl();
-      });
-      headerRow.parentNode.insertBefore(ad, headerRow.nextSibling);
+      var report = Object.assign({
+        t: new Date().toISOString(),
+        pTotal: document.querySelectorAll('p').length,
+        elTotal: document.querySelectorAll('*').length,
+        iframes: document.querySelectorAll('iframe').length,
+        adPresent: !!document.querySelector('[data-zca-ad-model]'),
+        btnPresent: !!document.querySelector('[data-zca-model-btn]')
+      }, extra || {});
+      api('/api/diag', { method: 'POST', body: JSON.stringify({ source: 'model-page', report: report }) });
     } catch (e) {}
+  }
+
+  function findModelDesc() {
+    var best = null, bestLen = 1e9;
+    var els = document.querySelectorAll('p,span,div,h1,h2,h3,h4');
+    for (var i = 0; i < els.length; i++) {
+      var t = (els[i].textContent || '').replace(/\s+/g, '');
+      if (t.length < 200 &&
+          (t.indexOf('管理自定义模型供应商') >= 0 || /Managecustommodelproviders/i.test(t))) {
+        if (t.length < bestLen) { best = els[i]; bestLen = t.length; }
+      }
+    }
+    return best;
+  }
+
+  function injectModelSettingsExtras() {
+    var best = null, bestLen = 0;
+    try {
+      best = findModelDesc();
+      bestLen = best ? (best.textContent || '').length : 0;
+      if (best) {
+        // --- ad: right after the description element ---
+        if (!document.querySelector('[data-zca-ad-model]') && best.parentNode) {
+          var ad = document.createElement('div');
+          ad.setAttribute('data-zca-ad-model', '1');
+          ad.className = 'zca-model-ad';
+          ad.textContent = 'AI 模型共享，尽在 sharellm.net';
+          ad.title = '点击访问 sharellm.net';
+          ad.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            openAdUrl();
+          });
+          best.parentNode.insertBefore(ad, best.nextSibling);
+        }
+        // ---「切换账号」button: appended to the header row (rightmost) ---
+        var headerRow = best.parentElement;
+        if (headerRow && !headerRow.querySelector('[data-zca-model-btn]')) {
+          var btn = document.createElement('button');
+          btn.setAttribute('data-zca-model-btn', '1');
+          btn.className = 'zca-model-btn';
+          btn.type = 'button';
+          btn.textContent = '切换账号';
+          btn.title = '打开账号切换面板';
+          btn.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            openPanel();
+          });
+          headerRow.appendChild(btn);
+        }
+      }
+      if (best || document.querySelector('[data-zca-ad-model],[data-zca-model-btn]')) {
+        diagReport({
+          descFound: !!best,
+          matchTag: best ? best.tagName : '',
+          matchClass: best ? String(best.className).slice(0, 80) : '',
+          matchLen: bestLen,
+          parentTag: best && best.parentNode ? best.parentNode.tagName : ''
+        });
+      }
+    } catch (e) {
+      diagReport({ error: String(e && e.message || e) });
+    }
   }
 
   // ------------------------------------------------------------------- panel
@@ -405,8 +467,8 @@
     injectStyle();
     ensureMenuItem();
     injectSettingsButton();
-    injectModelSettingsAd();
-    setInterval(function () { ensureMenuItem(); injectSettingsButton(); injectModelSettingsAd(); }, SCAN_MS);
+    injectModelSettingsExtras();
+    setInterval(function () { ensureMenuItem(); injectSettingsButton(); injectModelSettingsExtras(); }, SCAN_MS);
     window.__zcodeAccountSwitcher = { open: openPanel, refresh: refresh, ensureMenuItem: ensureMenuItem };
   }
 

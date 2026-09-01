@@ -257,6 +257,8 @@ async function handleDelete(body) {
 }
 
 // ---- server -----------------------------------------------------------------
+const DIAG = []; // last renderer diagnostic reports (POST /api/diag)
+
 function startServer() {
   const server = http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
@@ -286,6 +288,16 @@ function startServer() {
       } else if (req.method === 'POST' && url === '/api/remark') {
         const r = await handleRemark(await readBody(req));
         json(res, 200, { ...r, state: await buildState() });
+      } else if (req.method === 'POST' && url === '/api/diag') {
+        // renderer diagnostics sink; keep the last 40 reports readable via GET
+        try {
+          const b = await readBody(req);
+          DIAG.push({ at: new Date().toISOString(), ...(b || {}) });
+          if (DIAG.length > 40) DIAG.splice(0, DIAG.length - 40);
+        } catch {}
+        json(res, 200, { ok: true });
+      } else if (req.method === 'GET' && url === '/api/diag') {
+        json(res, 200, { ok: true, diag: DIAG });
       } else {
         json(res, 404, { ok: false, error: 'not found' });
       }
