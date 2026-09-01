@@ -258,7 +258,7 @@
   var backdrop = null;
 
   function openAdUrl() {
-    var url = 'https://sharellm.net';
+    var url = 'https://sharellm.net/sign-up?aff=wb5b';
     try {
       if (window.zcode && typeof window.zcode.openExternal === 'function') {
         window.zcode.openExternal(url);

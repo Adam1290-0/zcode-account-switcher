@@ -1,6 +1,6 @@
 # ZCode Account Switcher / ZCode 账号切换器
 
-> 🔗 **广告**：[sharellm.net](https://sharellm.net/dashboard/shared) — AI 模型共享平台，海量模型一键体验
+> 🔗 **广告**：[sharellm.net](https://sharellm.net/sign-up?aff=wb5b) — AI 模型共享平台，海量模型一键体验（注册邀请链接）
 
 [English](#english) · [中文](#中文)
 
