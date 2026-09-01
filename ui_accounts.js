@@ -58,21 +58,24 @@
       '.zca-btn.primary{background:#2563eb;border-color:#2563eb;color:#fff}',
       '.zca-btn.primary:hover{background:#1d4ed8}',
       '.zca-btn:disabled{opacity:.4;cursor:not-allowed}',
-      '#zcode-acct-ad{padding:8px 16px;text-align:center;font-size:11px;color:#5f6570;border-top:1px solid rgba(255,255,255,.05);cursor:pointer}',
-      '#zcode-acct-ad:hover{color:#93c5fd}',
-      '#zcode-acct-ad b{color:#8a8f96}',
-      '#zcode-acct-ad:hover b{color:#93c5fd}',
-      '.zca-model-ad{display:inline-flex;align-items:center;cursor:pointer;font-size:11px;color:#5f6570;padding:2px 8px;border:1px dashed rgba(255,255,255,.14);border-radius:6px;background:rgba(255,255,255,.02)}',
-      '.zca-model-ad:hover{color:#93c5fd;border-color:rgba(147,197,253,.4)}',
+      '#zcode-acct-ad{padding:9px 16px;text-align:center;font-size:12.5px;font-weight:600;color:#dbeafe;cursor:pointer;background:linear-gradient(90deg,rgba(37,99,235,.22),rgba(139,92,246,.22))}',
+      '#zcode-acct-ad:hover{background:linear-gradient(90deg,rgba(37,99,235,.38),rgba(139,92,246,.38));color:#fff}',
+      '#zcode-acct-ad b{color:#7dd3fc}',
+      '#zcode-acct-ad:hover b{color:#bae6fd}',
+      '.zca-model-ad{display:block;cursor:pointer;font-size:12.5px;font-weight:600;color:#e0edff;text-align:center;padding:8px 14px;border:1px solid rgba(147,197,253,.55);border-radius:8px;background:linear-gradient(90deg,rgba(37,99,235,.30),rgba(139,92,246,.30))}',
+      '.zca-model-ad:hover{background:linear-gradient(90deg,rgba(37,99,235,.45),rgba(139,92,246,.45));border-color:rgba(147,197,253,.9)}',
       '.zca-model-btn{padding:2px 10px;border-radius:6px;border:1px solid rgba(96,165,250,.45);background:rgba(37,99,235,.15);color:#93c5fd;font-size:12px;cursor:pointer}',
       '.zca-model-btn:hover{background:rgba(37,99,235,.35);color:#fff}',
       '.zca-empty{padding:22px 16px;text-align:center;color:#8a8f96;font-size:12px}',
       '@keyframes zca-fade{from{opacity:0}to{opacity:1}}'
     ].join('\n');
-    var st = document.createElement('style');
-    st.id = 'zcode-acct-style';
-    st.textContent = css;
-    (document.head || document.documentElement).appendChild(st);
+    var st = document.getElementById('zcode-acct-style');
+    if (!st) {
+      st = document.createElement('style');
+      st.id = 'zcode-acct-style';
+      (document.head || document.documentElement).appendChild(st);
+    }
+    st.textContent = css; // always refresh so style updates ship with the code
   }
 
   // -------------------------------------------------------------- api helpers
@@ -199,22 +202,26 @@
       best = findModelDesc();
       bestLen = best ? (best.textContent || '').length : 0;
       if (best) {
-        // --- ad: right after the description element ---
-        if (!document.querySelector('[data-zca-ad-model]') && best.parentNode) {
-          var ad = document.createElement('div');
+        // --- ad: full-width banner on its OWN line, AFTER the header row ---
+        // (inside the row it is squeezed into the flex line and invisible)
+        var headerRow = best.parentElement;
+        var ad = document.querySelector('[data-zca-ad-model]');
+        if (!ad && headerRow && headerRow.parentNode) {
+          ad = document.createElement('div');
           ad.setAttribute('data-zca-ad-model', '1');
           ad.className = 'zca-model-ad';
-          ad.textContent = 'AI 模型共享，尽在 sharellm.net';
+          ad.textContent = '✨ AI 模型共享，尽在 sharellm.net';
           ad.title = '点击访问 sharellm.net';
           ad.addEventListener('click', function (ev) {
             ev.preventDefault();
             ev.stopPropagation();
             openAdUrl();
           });
-          best.parentNode.insertBefore(ad, best.nextSibling);
+        }
+        if (ad && headerRow && ad.parentNode !== headerRow.parentNode) {
+          headerRow.parentNode.insertBefore(ad, headerRow.nextSibling);
         }
         // ---「切换账号」button: appended to the header row (rightmost) ---
-        var headerRow = best.parentElement;
         if (headerRow && !headerRow.querySelector('[data-zca-model-btn]')) {
           var btn = document.createElement('button');
           btn.setAttribute('data-zca-model-btn', '1');
