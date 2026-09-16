@@ -60,7 +60,7 @@ Give the [ZCode](https://zcode.z.ai) desktop app one-click multi-account switchi
 
 ### Coexistence with other patches
 
-`patch-account-switcher.bat` extracts from the **current** `app.asar` (not an old backup) and re-injects idempotently, so it preserves other patches such as [zcode-skin-manager](https://github.com/Adam1290-0/zcode-skin-manager) — and vice versa. Any order, any number of runs.
+`patch-account-switcher.bat` extracts from the **current** `app.asar` (not an old backup) and re-injects idempotently, so it preserves other patches such as [zcode-skin-manager](https://github.com/Adam1290-0/zcode-skin-manager), [zcode-pin](https://github.com/Adam1290-0/zcode-pin) and [zcode-route-override](https://github.com/Adam1290-0/zcode-route-override) — and vice versa. Any order, any number of runs.
 
 ### Files
 
@@ -125,7 +125,7 @@ ZCode stores all login credentials in `~/.zcode/v2/credentials.json` (AES-256-GC
 
 ### 与其他注入补丁共存
 
-`patch-account-switcher.bat` 从**当前** `app.asar` 解包（不是老备份）且注入幂等——重打会自动替换旧注入、保留其他补丁（如 [zcode-skin-manager](https://github.com/Adam1290-0/zcode-skin-manager)）的修改，两个补丁可以任意顺序反复打，互不覆盖。
+`patch-account-switcher.bat` 从**当前** `app.asar` 解包（不是老备份）且注入幂等——重打会自动替换旧注入、保留其他补丁（如 [zcode-skin-manager](https://github.com/Adam1290-0/zcode-skin-manager)、[zcode-pin](https://github.com/Adam1290-0/zcode-pin)、[zcode-route-override](https://github.com/Adam1290-0/zcode-route-override)）的修改，任意顺序反复打，互不覆盖。
 
 ### 使用说明
 
