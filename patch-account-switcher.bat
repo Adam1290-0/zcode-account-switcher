@@ -33,20 +33,21 @@ if not exist "%UI_JS%"    ( echo [ERROR] ui_accounts.js not found & pause & exit
 if not exist "%MAIN_MJS%" ( echo [ERROR] zcode-account-switcher-main.mjs not found & pause & exit /b 1 )
 if not exist "%INJECT_PY%" ( echo [ERROR] inject-account-switcher.py not found & pause & exit /b 1 )
 
-:: Backup original asar + unpacked dir (first time only)
-if not exist "%BACKUP_PATH%" (
-    echo [1/6] Creating backup...
+:: Backup original asar + unpacked dir.
+:: Refresh the backup whenever the CURRENT asar is clean (no injection marker),
+:: so after a ZCode update the backup always matches the installed version.
+findstr /M /C:"zcode-account-switcher-main" "%ASAR_PATH%" >nul 2>&1
+if errorlevel 1 (
+    echo [1/6] Creating/refreshing backup from clean asar...
     copy /Y "%ASAR_PATH%" "%BACKUP_PATH%" >nul
     if !errorlevel! neq 0 ( echo [ERROR] Backup failed & pause & exit /b 1 )
+    if exist "%BACKUP_UNPACKED%" rmdir /S /Q "%BACKUP_UNPACKED%"
+    if exist "%UNPACKED_PATH%" (
+        xcopy "%UNPACKED_PATH%" "%BACKUP_UNPACKED%" /E /I /Q /Y >nul
+    )
     echo       Backup saved: app.asar.acctbak
 ) else (
-    echo [1/6] Backup already exists, skip.
-)
-if not exist "%BACKUP_UNPACKED%" (
-    if exist "%UNPACKED_PATH%" (
-        xcopy "%UNPACKED_PATH%" "%BACKUP_UNPACKED%" /E /I /Y >nul
-        echo       Backup saved: app.asar.acctbak.unpacked
-    )
+    echo [1/6] Current asar already patched - keeping existing backup.
 )
 
 :: Extract from the CURRENT asar (not the backup) so other injections
