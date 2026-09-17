@@ -86,6 +86,9 @@ A: Profiles live in `~/.zcode/account-profiles/` on your machine only. The local
 **Q: Conversation history is shared?**
 A: Yes — only the login state switches; history and settings are global (isolating them would mean swapping a 600 MB+ database).
 
+**Q: `app.asar` shrank from ~307 MB to ~277 MB after re-patching?**
+A: Normal — the patcher repacks with `--unpack "*.{node,dll,exe}"`, moving native binaries into `app.asar.unpacked`. The two together still cover the whole app.
+
 ### How it works
 
 ZCode stores all login credentials in `~/.zcode/v2/credentials.json` (AES-256-GCM with a key derived from the machine environment). This tool injects:
@@ -160,6 +163,9 @@ A：Profile 只存本机 `~/.zcode/account-profiles/`；本地服务只绑定 `1
 
 **Q：对话历史会隔离吗？**
 A：不会——只切换登录态，历史与设置是全局共享的（隔离需要换 600MB+ 的会话数据库，成本过高）。
+
+**Q：重打补丁后 `app.asar` 从 307MB 缩到 277MB？**
+A：正常——补丁用 `--unpack "*.{node,dll,exe}"` 重打包，原生二进制挪进了 `app.asar.unpacked`，两者加起来仍是完整应用。
 
 ### 原理
 
